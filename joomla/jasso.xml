@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="1.6" type="plugin" group="user">
+	<name>plg_user_jasso</name>
+	<author>Christopher Roussel</author>
+	<creationDate>March 2011</creationDate>
+	<authorEmail>christopher@impleri.net</authorEmail>
+	<authorUrl>impleri.net</authorUrl>
+	<version>0.8.5</version>
+	<description>PLG_USER_JASSO_XML_DESCRIPTION</description>
+	<files>
+		<filename plugin="jasso">jasso.php</filename>
+		<filename>index.html</filename>
+	</files>
+	<languages>
+		<language tag="en-GB">en-GB.plg_user_jasso.ini</language>
+		<language tag="en-GB">en-GB.plg_user_jasso.sys.ini</language>
+	</languages>
+
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+				<field name="addnew" type="radio"
+					default="1"
+					description="PLG_USER_JASSO_ADDNEW_DESC"
+					label="PLG_USER_JASSO_ADDNEW_LABEL"
+				>
+					<option value="0">JNo</option>
+					<option value="1">JYes</option>
+				</field>
+				<field name="path" type="text" size="100"
+					description="PLG_USER_JASSO_PATH_DESC"
+					label="PLG_USER_JASSO_PATH_LABEL"
+				/>
+			</fieldset>
+		</fields>
+	</config>
+</extension>

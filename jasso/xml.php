@@ -3,6 +3,7 @@
  * XML Bridge
  *
  * @author Christopher Roussel
+ * @package JaSSO
  */
 
 /**

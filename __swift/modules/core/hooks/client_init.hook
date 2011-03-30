@@ -1,0 +1,44 @@
+<?php
+/**
+ * Joomla autologin hook for Kayako/Swift
+ *
+ * @author Christopher Roussel
+ * @package JaSSO
+ */
+
+if (!defined(SWIFT_INTERFACE)) {
+	die;
+}
+
+// First, check Joomla to see if user is actually logged in
+require_once('jasso/joomla.php'); // index files chdir to the root path
+if (!defined('_JEXEC')) {
+	JKayakoJoomla::loadJoomla();
+}
+
+// if user is logged into Joomla ...
+$jUser = JFactory::getUser();
+if (!$jUser->guest) {
+	// ... get or create a user in Kayako ...
+	$kUser = SWIFT_User::GetOrCreateUserID($jUser->name, $jUser->email, SWIFT_UserGroup::RetrieveOnTitle('Registered'));
+
+	// ... and push user into Kayako ...
+	if (is_object($kUser)) {
+		// ... so login finally ...
+		$kUser->LoadIntoSWIFTNameSpace();
+		$kUser->UpdateLastVisit();
+
+		// ... and re-run the client init code so it looks like we're logged in!
+		$newsAuth = false;
+		if (SWIFT_Module::IsRegistered(MODULE_NEWS) && SWIFT_Widget::IsWidgetVisible(MODULE_NEWS)) {
+			$newsReg = true;
+			$newsAuth = intval($kUser->GetPermission('perm_cansubscribenews'));
+		}
+
+		$this->Template->Assign('_userIsLoggedIn', true);
+		$this->Template->Assign('_isNewsModuleRegistered', $newsReg);
+		$this->Template->Assign('_redirectAction', $_SWIFT->Router->GetArgumentsAsString());
+		$this->Template->Assign('_canPostComments', intval($kUser->GetPermission('perm_canpostcomment')));
+		$this->Template->Assign('_canSubscribeNews', $newsAuth);
+	}
+}

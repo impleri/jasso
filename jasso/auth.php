@@ -1,8 +1,9 @@
 <?php
 /**
- * Joomla User Bridge
+ * Kayako/Swift - Joomla authentication bridge
  *
  * @author Christopher Roussel
+ * @package JaSSO
  */
 
 require_once('xml.php');
@@ -12,43 +13,43 @@ require_once('swift.php');
 class JKayakoAuth {
 	/**
 	 * User login (username or email)
-	 * @param str Login passed by Kayako
+	 * @var Login passed by Kayako in request
 	 */
 	var $login = '';
 
 	/**
 	 * User password
-	 * @param str Plain text password passed by Kayako
+	 * @var Plain text password passed by Kayako in request
 	 */
 	var $pass = '';
 
 	/**
 	 * User IP address
-	 * @param str User IP passed by Kayako
+	 * @var User IP passed by Kayako in request
 	 */
 	var $ip = '';
 
 	/**
 	 * Login type (user or staff)
-	 * @param str Login type specificed in URL (cannot pass directly from within Kayako)
+	 * @var Login type specificed in reuqest (cannot pass directly from within Kayako)
 	 */
 	var $site = 'user';
 
 	/**
 	 * XML response handler
-	 * @param obj JKayakoXml
+	 * @var JKayakoXml object
 	 */
 	var $_xml = null;
 
 	/**
 	 * Joomla user handler
-	 * @param obj JKayakoJoomla
+	 * @var JKayakoJoomla object
 	 */
 	var $_joomla = null;
 
 	/**
 	 * Swift user handler
-	 * @param obj JKayakoSwift
+	 * @var JKayakoSwift object
 	 */
 	var $_swift = null;
 
@@ -62,9 +63,7 @@ class JKayakoAuth {
 		$this->pass = $this->clean($_REQUEST['password']);
 		$this->ip = $this->clean($_REQUEST['ipaddress']);
 		$this->site = $this->clean($_REQUEST['site']);
-
 		$this->_xml = new JKayakoXml();
-		$this->_joomla = new JKayakoJoomla();
 	}
 
 	/**
@@ -79,6 +78,7 @@ class JKayakoAuth {
 		}
 
 		$ret = 0;
+		$this->_joomla = new JKayakoJoomla();
 		$jUser = $this->_joomla->login($this->login, $this->pass);
 
 		// successful joomla login
@@ -89,19 +89,19 @@ class JKayakoAuth {
 		// failed joomla login, so try kayako
 		else {
 			$this->_swift = new JKayakoSwift();
-			$kUser = $this->_swift->Authenticate($this->login, $this->pass);
+			$kUser = $this->_swift->login($this->login, $this->pass);
 			// there is a kayako user
 			if ($kUser) {
-				// we can find a joomla user with the same login info
-				$jUser = $this->match($kUser);
+				$jUser = $this->_joomla->match($this->login);
+				// email also exists in joomla, so map the two for future (will overwrite all but password in Kayako)
 				if ($jUser) {
-					$this->returnJoomla($jUser);
-					$ret = 1;
+					$ret = $this->returnJoomla($jUser);
 				}
-				elseif($this->_joomla->insert($kUser)) {
-					$this->returnSwift($kUser);
-					$ret = 1;
+				// email not in joomla, so register user there
+				elseif($this->_joomla->insert($kUser, $this->login, $this->pass)) {
+					$ret = $this->returnSwift($kUser);
 				}
+				// something went horribly wrong
 				else {
 					$this->_xml->message = 'Invalid Username or Password';
 				}
@@ -109,16 +109,6 @@ class JKayakoAuth {
 		}
 		$this->_xml->result = $ret;
 		return $this->_xml->buildResponse();
-	}
-
-	/**
-	 * Matching process
-	 *
-	 * Tries to connect an existing Joomla user with an existing Kayako user
-	 */
-	function match ($user) {
-		$ret = $this->_joomla->match($user);
-
 	}
 
 	/**
@@ -134,6 +124,7 @@ class JKayakoAuth {
 			$this->_xml->name = $user->get('name');
 			$this->_xml->email = $user->get('email');
 		}
+		return 1;
 	}
 
 	/**
@@ -151,6 +142,7 @@ class JKayakoAuth {
 			$this->_xml->designation = $user->GetProperty('userdesignation');
 			$this->_xml->phone = $user->GetProperty('phone');
 		}
+		return 1;
 	}
 
 	/**
@@ -159,7 +151,8 @@ class JKayakoAuth {
 	 * Strips and escapes bad characters from $_REQUEST (bad hacker!)
 	 */
 	function clean ($var) {
-
+		// TODO
+		return $var;
 	}
 }
 
@@ -167,30 +160,3 @@ class JKayakoAuth {
 $auth = new JKayakoAuth();
 echo $auth->process();
 die;
-
-/* Dev Comment
-Process:
-X	1. Get posted data							auth.php
-	2. Clean posted data						auth.php
-X	3. If there is empty data					auth.php
-X		A. FAIL (no login information)			auth.php -> xml.php
-X	4. Else (i.e. good data)					auth.php
-X		A. Process Joomla authentication		auth.php -> joomla.php
-X		B. If success								joomla.php -> auth.php
-X			I. WIN (Let Swift handle syncing)	auth.php -> xml.php
-X		C. Else (i.e. failure)						joomla.php -> auth.php
-X			I. Process Swift authentication				auth.php -> swift.php
-X			II. If failure							swift.php -> auth.php
-X				a. FAIL (user not found)		auth.php -> xml.php
-X			III. Else (i.e. success)				swift.php
-X				a. Add user to Joomla					swift.php -> joomla.php
-X				b. If success							joomla.php -> swift.php
-X					i. WIN						swift.php -> auth.php -> xml.php
-X				c. Else (i.e. failure)					swift.php
-X					i. Match users in DB				swift.php
-X					ii. If strong match					swift.php
-X						1. Sync passwords				swift.php
-X						2. WIN					swift.php -> auth.php -> xml.php
-X					iii. Else						swift.php -> auth.php
-X						1. FAIL (user cannot be synced)	auth.php -> xml.php
-*/
