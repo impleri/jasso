@@ -18,10 +18,15 @@ Requires Joomla 1.6 or greater.
 
 == Changelog ==
 
+= 0.8.7 =
+* Second beta release
+* Login through Kayako works and syncs users in Joomla and Kayako
+* Added authentication plugin for Joomla to allow logins by email address
+
 = 0.8.5 =
 * First beta release
 * Autologin hook into Kayako
-* Compatible with Community Builder (tested with CB 1.4)
+* Added Community Builder
 
 = 0.8.0 =
 * Public alpha release

@@ -61,8 +61,8 @@ class JKayakoAuth {
 	function __construct () {
 		$this->login = $this->clean($_REQUEST['username']);
 		$this->pass = $this->clean($_REQUEST['password']);
-		$this->ip = $this->clean($_REQUEST['ipaddress']);
-		$this->site = $this->clean($_REQUEST['site']);
+// 		$this->ip = $this->clean($_REQUEST['ipaddress']);
+		$this->site = (isset($_REQUEST['site'])) ? $this->clean($_REQUEST['site']) : $this->site;
 		$this->_xml = new JKayakoXml();
 	}
 
@@ -77,13 +77,12 @@ class JKayakoAuth {
 			return;
 		}
 
-		$ret = 0;
 		$this->_joomla = new JKayakoJoomla();
-		$jUser = $this->_joomla->login($this->login, $this->pass);
+		$ret = $this->_joomla->login($this->login, $this->pass);
+		$jUser = $this->_joomla->getUser();
 
 		// successful joomla login
-		if ($jUser) {
-			$ret = 1;
+		if ($ret && $jUser) {
 			$this->returnJoomla($jUser);
 		}
 		// failed joomla login, so try kayako
@@ -103,12 +102,18 @@ class JKayakoAuth {
 				}
 				// something went horribly wrong
 				else {
+					echo '<div>This hack is really bad</div>';
 					$this->_xml->message = 'Invalid Username or Password';
 				}
 			}
+			else {
+				echo '<div>User not found in Swift either</div>';
+				$this->_xml->message = 'Invalid Username or Password';
+			}
 		}
-		$this->_xml->result = $ret;
-		return $this->_xml->buildResponse();
+		$this->_xml->result = intval($ret);
+		$ret = $this->_xml->buildResponse();
+		return $ret;
 	}
 
 	/**
@@ -121,10 +126,10 @@ class JKayakoAuth {
 
 		}
 		else {
-			$this->_xml->name = $user->get('name');
-			$this->_xml->email = $user->get('email');
+			$this->_xml->fullname = $user->get('name');
+			$this->_xml->emails = array($user->get('email'));
 		}
-		return 1;
+		return;
 	}
 
 	/**
@@ -137,12 +142,12 @@ class JKayakoAuth {
 
 		}
 		else {
-			$this->_xml->name = $user->GetFullName();
+			$this->_xml->fullname = $user->GetFullName();
 			$this->_xml->emails = $user->GetEmailList();
 			$this->_xml->designation = $user->GetProperty('userdesignation');
 			$this->_xml->phone = $user->GetProperty('phone');
 		}
-		return 1;
+		return;
 	}
 
 	/**
@@ -159,4 +164,3 @@ class JKayakoAuth {
 // that's it.
 $auth = new JKayakoAuth();
 echo $auth->process();
-die;

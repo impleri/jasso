@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="1.6" type="plugin" group="auth">
+	<name>plg_authentication_jasso</name>
+	<author>Christopher Roussel</author>
+	<creationDate>April 2011</creationDate>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>christopher@impleri.net</authorEmail>
+	<authorUrl>impleri.net</authorUrl>
+	<version>0.8.5</version>
+	<description>PLG_AUTH_JASSO_XML_DESCRIPTION</description>
+	<files>
+		<filename plugin="jasso">jasso.php</filename>
+		<filename>index.html</filename>
+	</files>
+	<languages>
+		<language tag="en-GB">en-GB.plg_authentication_jasso.ini</language>
+		<language tag="en-GB">en-GB.plg_authentication_jasso.sys.ini</language>
+	</languages>
+</extension>

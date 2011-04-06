@@ -19,17 +19,17 @@ class JKayakoSwift {
 	/**
 	 * Loads Kayako/Swift (if not already done).
 	 */
-	public function loadSwift() {
-		// Load Swift API
-		if (defined(SWIFT_INTERFACE)) {
+	private function loadSwift() {
+		if (defined('SWIFT_INTERFACE')) {
 			return;
 		}
 
-		define('SWIFT_INTERFACE', 'api');
+		$path = (defined('SWIFT_CUSTOMPATH')) ? SWIFT_CUSTOMPATH : dirname(__FILE__) . '/../__swift/';
+		$realpath = realpath($path);
+		define('SWIFT_INTERFACE', 'cron');
 		define('SWIFT_INTERFACEFILE', __FILE__);
-		$path = (defined("SWIFT_CUSTOMPATH")) ? SWIFT_CUSTOMPATH : dirname(__FILE__) . '/../__swift/';
-		chdir($path);
-		require_once ('swift.php');
+		chdir($realpath);
+		require_once ('./swift.php');
 	}
 
 	/**
@@ -46,21 +46,21 @@ class JKayakoSwift {
 			self::loadSwift();
 		}
 
+		// make sure the Kayako libraries are loaded
+		SWIFT_Loader::LoadLibrary('User');
+		SWIFT_Loader::LoadLibrary('User:UserEmail');
+
 		// user must have tried a Joomla login or forgotten to put a password, so don't bother with Kayako
 		if (!IsEmailValid($email)) {
 			return false;
 		}
-
-		// make sure the Kayako libraries are loaded
-		SWIFT_Loader::LoadLibrary('User');
-		SWIFT_Loader::LoadLibrary('User:UserEmail');
 
 		// try to get a user id from the email ...
 		$userId = SWIFT_UserEmail::RetrieveUserIDOnUserEmail($email);
 		if ($userId) {
 			// ... and load the user if one exists
 			$kUser = new SWIFT_User($userId);
-			if ( $kUser instanceof SWIFT_User && $kUser->GetIsClassLoaded() && $kUser->GetProperty('isenabled') == '0' && $kUser->GetProperty('isvalidated') == '0' && ($kUser->GetProperty('userexpirytimeline') == '0' || $kUser->GetProperty('userexpirytimeline') > time())
+			if ( $kUser instanceof SWIFT_User && $kUser->GetIsClassLoaded() && $kUser->GetProperty('isenabled') == '1' && $kUser->GetProperty('isvalidated') == '1' && ($kUser->GetProperty('userexpirytimeline') == '0' || $kUser->GetProperty('userexpirytimeline') > time())
 			) {
 				// hash password if needed and check password against record
 				$password = ($kUser->GetProperty('islegacypassword') == '1' && $hash == true) ? md5($password) : ($hash == true) ? SWIFT_User::GetComputedPassword($password) : $password;

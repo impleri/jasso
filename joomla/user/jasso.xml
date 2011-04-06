@@ -5,6 +5,7 @@
 	<creationDate>March 2011</creationDate>
 	<authorEmail>christopher@impleri.net</authorEmail>
 	<authorUrl>impleri.net</authorUrl>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
 	<version>0.8.5</version>
 	<description>PLG_USER_JASSO_XML_DESCRIPTION</description>
 	<files>

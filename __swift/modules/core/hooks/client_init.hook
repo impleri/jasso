@@ -11,7 +11,7 @@ if (!defined(SWIFT_INTERFACE)) {
 }
 
 // First, check Joomla to see if user is actually logged in
-require_once('jasso/joomla.php'); // index files chdir to the root path
+require_once('./jasso/joomla.php'); // index files chdir to the root path
 if (!defined('_JEXEC')) {
 	JKayakoJoomla::loadJoomla();
 }

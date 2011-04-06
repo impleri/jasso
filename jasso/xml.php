@@ -16,27 +16,22 @@ class JKayakoXml {
 	/**
 	 * XML response field header
 	 */
-	var $_xml = '<?xml version="1.0" encoding="UTF-8" ?><loginshare>%s</loginshare>';
+	private $_xml = "<?xml version='1.0' encoding='UTF-8'?>\n<loginshare>\n%s</loginshare>";
 
 	/**
 	 * XML response field template
 	 */
-	var $_tpl = '<%s>%s<\%s>';
+	private $_tpl = "<%s>%s</%s>\n";
 
 	/**
 	 * field data array
 	 */
-	var $_data = array();
-
-	/**
-	 * Simple constructor
-	 */
-	public function __construct () {
-		// Default values
-		$this->usergroup = 'Registered';
-		$this->result = 0;
-		$this->message = '';
-	}
+	private $_data = array(
+		'usergroup' => 'Registered',
+		'team' => 'Registered',
+		'result' => 0,
+		'message' => '',
+	);
 
 	/**
 	 * Overloaded set method
@@ -66,17 +61,20 @@ class JKayakoXml {
 	 * Overloaded add method for building the XML string
 	 *
 	 * @param string Method name
-	 * @param array Arguments (if any) passed to method
+	 * @param array Arguments passed to method (not used)
 	 * @return string XML formatted node
 	 */
-	function __call ($name, $args) {
+	public function __call ($name, $args=array()) {
+		if (method_exists('self', $name)) {
+			return $this->$name();
+		}
 		// Not an add* method so don't bother
 		if (strpos($name, 'add') !== 0) {
 			return '';
 		}
-		$var = strtolower(substr($name, 4));
-		$res = (empty($args[0])) ? $this->$var : $args[0];
-		return (empty($res)) ? '' : sprintf($this->_tpl, $var, $res, $var);
+		$key = strtolower(substr($name, 3));
+		$val = $this->$key;
+		return (empty($val)) ? '' : sprintf($this->_tpl, $key, $val, $key);
 	}
 
 	/**
@@ -85,7 +83,7 @@ class JKayakoXml {
 	 * @param string Response type (user or staff)
 	 * @return string XML formatted node
 	 */
-	function buildResponse ($type='user') {
+	public function buildResponse ($type='user') {
 		$method = 'add' . ucfirst($type);
 		$res = $this->addResult() . $this->addMessage();
 		$res .= ($this->result) ? $this->$method() : '';
@@ -97,8 +95,9 @@ class JKayakoXml {
 	 *
 	 * @return string XML formatted node
 	 */
-	function addUser () {
-		return sprintf($this->_tpl, 'user', $this->addUsergroup() . $this->addFullname() . $this->addDesignation() . $this->addEmails() . $this->addPhone(), 'user');
+	private function addUser () {
+		$string = "\n" . $this->addUsergroup() . $this->addFullname() . $this->addDesignation() . $this->addEmails() . $this->addPhone();
+		return sprintf($this->_tpl, 'user', $string, 'user');
 	}
 
 	/**
@@ -106,8 +105,17 @@ class JKayakoXml {
 	 *
 	 * @return string XML formatted node
 	 */
-	function addStaff () {
+	private function addStaff () {
 		return sprintf($this->_tpl, 'user', $this->addTeam() . $this->addFirstname() . $this->addLastname() . $this->addDesignation() . $this->addEmail() . $this->addMobilenumber() . $this->addSignature(), 'user');
+	}
+
+	/**
+	 * Single email node
+	 *
+	 * @return string XML formatted node
+	 */
+	private function addEmail ($email) {
+		return sprintf($this->_tpl, 'email', $email, 'email');
 	}
 
 	/**
@@ -115,16 +123,10 @@ class JKayakoXml {
 	 *
 	 * @return string XML formatted node
 	 */
-	function addEmails ($emails=array()) {
-		$include = '';
-		$emails = empty($emails) ? $this->emails : $emails;
-
-		if (!is_array($emails)) {
-			$include = $this->addEmail($emails);
-		} else {
-			foreach ($emails as $email) {
-				$include .= $this->addEmail($email);
-			}
+	private function addEmails () {
+		$include = "\n";
+		foreach ($this->emails as $email) {
+			$include .= $this->addEmail($email);
 		}
 		return sprintf($this->_tpl, 'emails', $include, 'emails');
 	}

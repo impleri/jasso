@@ -7,20 +7,32 @@
  */
 
 class JKayakoJoomla {
-	/**
-	 * @var Path to your Joomla (can be relative, but beware!)
+		/**
+	 * Joomla Directory
+	 * @var Path to your Joomla (can be relative, but beware as Kayako changes its directory!)
 	 */
-	var $jPath = '/home/mysite/public_html/';
+	private static $jPath = '/home/USER/public_html/';
 
 	/**
+	 * CommunityBuilder Switch
+	 * Will be set automatically (i.e. only change to true if you know what you are doing)
 	 * @var Boolean switch for whether CB is accessible or not
 	 */
-	var $cbInstalled = false;
+	private static $cbInstalled = false;
 
 	/**
+	 * CommunityBuilder Directory
+	 * Default is correct, so do not alter unless you know what you are doing!
+	 * @var CB directory, i.e. component name (relative to JPATH_ADMINISTRATOR/components/)
+	 */
+	private static  $cbDirectory = 'com_comprofiler';
+
+	/**
+	 * CommunityBuilder Plugin File
+	 * Default is correct, so do not alter unless you know what you are doing!
 	 * @var CB plugin core file (relative to JPATH_ADMINISTRATOR/components/)
 	 */
-	var $cbFile = 'com_comprofiler/plugin.foundation.php';
+	private static  $cbFile = 'plugin.foundation.php';
 
 	/**
 	 * Constructor. Loads Joomla if not already done.
@@ -65,6 +77,16 @@ class JKayakoJoomla {
 
 		$mainframe = JFactory::getApplication('site');
 		return $mainframe->login(array('username' => $login, 'password' => $password),array('silent' => true));
+	}
+
+	/**
+	 * Get User from Joomla
+	 *
+	 * @return mixed JUser object if logged in, false if not
+	 */
+	public function getUser () {
+		$jUser = JFactory::getUser();
+		return ($jUser->guest) ? false : $jUser;
 	}
 
 	/**
@@ -215,7 +237,7 @@ class JKayakoJoomla {
 	 * @private
 	 */
 	private function _checkCB() {
-		$cbFile = JPATH_ADMINISTRATOR . DS . 'components' . DS . self::$cbFile;
+		$cbFile = JPATH_ADMINISTRATOR . DS . 'components' . DS . self::$cbDirectory . DS . self::$cbFile;
 		if (file_exists($cbFile)) {
 			require_once($cbFile);
 			self::$cbInstalled = true;
@@ -230,14 +252,15 @@ class JKayakoJoomla {
 	 */
 	private function _loadCB() {
 		global $_CB_framework, $_CB_database, $mainframe, $_PLUGINS;
-		if (!self::$cbInstalled) {
-			if (self::_checkCB()) {
-				$mainframe = JFactory::getApplication('site');
-				cbimport('cb.database');
-				cbimport('cb.tables');
-				cbimport('cb.tabs');
-				cbimport('language.front');
-			}
+		if (defined('_CB_JQUERY_VERSION')) {
+			return;
+		}
+		if (self::$cbInstalled || self::_checkCB()) {
+			$mainframe = JFactory::getApplication('site');
+			cbimport('cb.database');
+			cbimport('cb.tables');
+			cbimport('cb.tabs');
+			cbimport('language.front');
 		}
 	}
 
