@@ -1,15 +1,14 @@
 <?php
+define('_JASSO_AUTH', true);
+require_once('xml.php');
+require_once('joomla.php');
+require_once('swift.php');
 /**
  * Kayako/Swift - Joomla authentication bridge
  *
  * @author Christopher Roussel
  * @package JaSSO
  */
-
-require_once('xml.php');
-require_once('joomla.php');
-require_once('swift.php');
-
 class JKayakoAuth {
 	/**
 	 * User login (username or email)
@@ -61,8 +60,9 @@ class JKayakoAuth {
 	function __construct () {
 		$this->login = $this->clean($_REQUEST['username']);
 		$this->pass = $this->clean($_REQUEST['password']);
+		$this->ip = $this->clean($_REQUEST['ipaddress']);
 // 		$this->ip = $this->clean($_REQUEST['ipaddress']);
-		$this->site = (isset($_REQUEST['site'])) ? $this->clean($_REQUEST['site']) : $this->site;
+		$this->site = (isset($_REQUEST['interface'])) ? $this->clean($_REQUEST['interface']) : $this->site;
 		$this->_xml = new JKayakoXml();
 	}
 
@@ -123,11 +123,27 @@ class JKayakoAuth {
 	 */
 	function returnJoomla ($user) {
 		if ($this->site == 'staff') {
-
+			$name = $user->get('name');
+			$pos = strpos($name, ' ');
+			// required
+			$this->_xml->firstname = ($pos > 0) ? substr($name, 0, $pos) : $name;
+			$this->_xml->lastname = ($pos > 0) ? substr($name, $pos) : $name;
+			$this->_xml->email = $user->get('email');
+			$this->_xml->team = 'Staff';
+			// optional
+			$this->_xml->designation = '';
+			$this->_xml->mobilenumber = '';
+			$this->_xml->signature = '';
 		}
 		else {
+			// required
 			$this->_xml->fullname = $user->get('name');
 			$this->_xml->emails = array($user->get('email'));
+			// optional
+			$this->_xml->phone = '';
+			$this->_xml->designation = '';
+			$this->_xml->organization = '';
+			$this->_xml->organizationtype = 'restricted';
 		}
 		return;
 	}
@@ -139,13 +155,24 @@ class JKayakoAuth {
 	 */
 	function returnSwift ($user) {
 		if ($this->site == 'staff') {
-
+			$this->_xml->firstname = $user->GetProperty('firstname');
+			$this->_xml->lastname = $user->GetProperty('lastname');
+			$this->_xml->email = $user->get('email');
+			$this->_xml->team = $user->GetProperty('team');
+			// optional
+			$this->_xml->designation = $user->GetProperty('designation');
+			$this->_xml->mobilenumber = $user->GetProperty('mobilenumber');
+			$this->_xml->signature = $user->GetProperty('signature');
 		}
 		else {
+			// required
 			$this->_xml->fullname = $user->GetFullName();
 			$this->_xml->emails = $user->GetEmailList();
-			$this->_xml->designation = $user->GetProperty('userdesignation');
+			// optional
 			$this->_xml->phone = $user->GetProperty('phone');
+			$this->_xml->designation = $user->GetProperty('userdesignation');
+			$this->_xml->organization = $user->GetProperty('organization');
+			$this->_xml->organizationtype = $user->GetProperty('organizationtype');
 		}
 		return;
 	}

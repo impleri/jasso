@@ -1,37 +1,45 @@
 <?php
-/**
- * XML Bridge
- *
- * @author Christopher Roussel
- * @package JaSSO
- */
-
+defined('_JASSO_AUTH') or die('Invalid access denied.');
 /**
  * XML handler class
  *
- * Mostly overloaded methods.
+ * Creates an XML response string for auth requests. Most properties and methods are overloaded.
+ * @package JaSSO
  * @author Christopher Roussel
  */
 class JKayakoXml {
 	/**
-	 * XML response field header
+	 * @var string XML response field header
 	 */
 	private $_xml = "<?xml version='1.0' encoding='UTF-8'?>\n<loginshare>\n%s</loginshare>";
 
 	/**
-	 * XML response field template
+	 * @var string XML response field template
 	 */
 	private $_tpl = "<%s>%s</%s>\n";
 
 	/**
-	 * field data array
+	 * @var array field data
 	 */
 	private $_data = array(
 		'usergroup' => 'Registered',
 		'team' => 'Registered',
-		'result' => 0,
-		'message' => '',
 	);
+
+	/**
+	 * @var bool auth result response
+	 */
+	public $result = 0;
+
+	/**
+	 * @var string auth response message (if any)
+	 */
+	public $message = '';
+
+	/**
+	 * @var array user emails
+	 */
+	public $emails = array();
 
 	/**
 	 * Overloaded set method
@@ -61,73 +69,49 @@ class JKayakoXml {
 	 * Overloaded add method for building the XML string
 	 *
 	 * @param string Method name
-	 * @param array Arguments passed to method (not used)
+	 * @param array Arguments passed to method (add* methods expect one argument: the value to add to the XML node)
 	 * @return string XML formatted node
 	 */
 	public function __call ($name, $args=array()) {
-		if (method_exists('self', $name)) {
-			return $this->$name();
-		}
 		// Not an add* method so don't bother
 		if (strpos($name, 'add') !== 0) {
 			return '';
 		}
 		$key = strtolower(substr($name, 3));
-		$val = $this->$key;
-		return (empty($val)) ? '' : sprintf($this->_tpl, $key, $val, $key);
+		return (!empty($args[0])) ? sprintf($this->_tpl, $key, $args[0], $key) : '';
 	}
 
 	/**
-	 * Response output
+	 * Build an XML response
 	 *
 	 * @param string Response type (user or staff)
-	 * @return string XML formatted node
+	 * @return string XML formatted response
 	 */
 	public function buildResponse ($type='user') {
-		$method = 'add' . ucfirst($type);
 		$res = $this->addResult() . $this->addMessage();
-		$res .= ($this->result) ? $this->$method() : '';
-		return sprintf($this->_xml, $res);
+		if ($this->result) {
+			if ($type == 'user') {
+				$res .= $this->formatEmails();
+			}
+			foreach ($this->_data as $key => $val) {
+				$method = 'add' . $key;
+				$res .= $this->$method($val);
+			}
+		}
+		return sprintf($this->_xml, sprintf($this->_tpl, $type, $res, $type));
 	}
 
 	/**
-	 * User response node
+	 * Formats a user emails node
 	 *
 	 * @return string XML formatted node
 	 */
-	private function addUser () {
-		$string = "\n" . $this->addUsergroup() . $this->addFullname() . $this->addDesignation() . $this->addEmails() . $this->addPhone();
-		return sprintf($this->_tpl, 'user', $string, 'user');
-	}
-
-	/**
-	 * Staff response node
-	 *
-	 * @return string XML formatted node
-	 */
-	private function addStaff () {
-		return sprintf($this->_tpl, 'user', $this->addTeam() . $this->addFirstname() . $this->addLastname() . $this->addDesignation() . $this->addEmail() . $this->addMobilenumber() . $this->addSignature(), 'user');
-	}
-
-	/**
-	 * Single email node
-	 *
-	 * @return string XML formatted node
-	 */
-	private function addEmail ($email) {
-		return sprintf($this->_tpl, 'email', $email, 'email');
-	}
-
-	/**
-	 * User emails node
-	 *
-	 * @return string XML formatted node
-	 */
-	private function addEmails () {
+	private function formatEmails () {
 		$include = "\n";
 		foreach ($this->emails as $email) {
 			$include .= $this->addEmail($email);
 		}
 		return sprintf($this->_tpl, 'emails', $include, 'emails');
 	}
+
 }

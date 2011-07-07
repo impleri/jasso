@@ -4,10 +4,11 @@
  *
  * @author Christopher Roussel
  * @package JaSSO
+ * @subpackage Joomla
  */
 
 // No direct access
-defined('_JEXEC') or die;
+defined('_JEXEC') or die('Invalid access denied.');
 
 jimport('joomla.plugin.plugin');
 
@@ -16,10 +17,6 @@ jimport('joomla.plugin.plugin');
  */
 class plgUserJasso extends JPlugin
 {
-	public function __construct(&$subject, $config=array()) {
-		parent::__construct($subject, $config);
-		$this->loadLanguage();
-	}
 	/**
 	 * Syncs user details here with Kayako's user details
 	 *
@@ -29,32 +26,24 @@ class plgUserJasso extends JPlugin
 	 * @param string $void (unused)
 	 */
 	public function onUserAfterSave($user, $isnew, $success, $void='') {
-		// Initialise variables.
-		$method = 'update';
-
 		// registration/update was unsuccessful, so why bother?
 		if (!$success) {
 			return;
 		}
 
-		// no need to sync if we have a new user and have registration sync disabled
-		if ( $isnew && !$this->params->get('addnew',0) ) {
+		// registration sync disabled
+		if ($isnew && $this->params->get('addnew',0)) {
 			return;
-		}
-
-		// syncing even at registration (why?!?)
-		elseif ( $isnew && $this->params->get('addnew',0) ) {
-			$method = 'insert';
 		}
 
 		$kUser = $this->_getSwift();
 		if (is_object($kUser)) {
-			$kUser->$method($user);
+			$kUser->sync($user, $isnew);
 		}
 	}
 
 	/**
-	 * (WIP) This will create a user session in Kayako on a successful login
+	 * Create a user session in Kayako on a successful Joomla login
 	 *
 	 * @param array $user User data
 	 * @param array $options login options
@@ -62,7 +51,12 @@ class plgUserJasso extends JPlugin
 	 */
 	public function onUserLogin($user, $options = array())
 	{
-		return true;
+		$kUser = $this->_getSwift();
+		if (!is_object($kUser)) {
+			return false;
+		}
+
+		return $kUser->loadSession($user['email']);
 	}
 
 	/**

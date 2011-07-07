@@ -1,11 +1,11 @@
 <?php
+defined('_JASSO_AUTH') or die('Invalid access denied.');
 /**
  * Joomla user class
  *
  * @author Christopher Roussel
  * @package JaSSO
  */
-
 class JKayakoJoomla {
 		/**
 	 * Joomla Directory
