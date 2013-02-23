@@ -4,6 +4,7 @@
  *
  * @author Christopher Roussel
  * @package JaSSO
+ * @version 0.8.7
  */
 
 // Load Swift API
